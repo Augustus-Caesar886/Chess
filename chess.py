@@ -27,19 +27,18 @@ BISHOP = "BISHOP"
 KNIGHT = "KNIGHT"
 ROOK = "ROOK"
 PAWN = "PAWN"
+NONE = "NONE"
 
 class Piece:
     row = 0
     column = 0
-    piece_type = ""
+    piece_type = NONE
     color = BLACK
     alive = True
     selected = False
     
     def __init__(self, piece_type, color):
         self.piece_type = piece_type
-        self.row = row 
-        self.column = column
         self.color = color 
     
     def kill(self):
@@ -47,8 +46,8 @@ class Piece:
 
 REPEATEDPIECES = [ROOK, KNIGHT, BISHOP]
 
-def init_board() {
-    board = [[]]
+def init_board():
+    board = [[Piece(NONE, BLACK) for i in range(8)] for i in range(8)]
     for i in range(3):
         board[0][i] = board[0][7-i] = Piece(REPEATEDPIECES[i % 3], BLACK)
         board[0][i].row = board[0][7-i].row = 0
@@ -84,12 +83,25 @@ def init_board() {
         board[6][i] = Piece(PAWN, BLACK)
         board[6][i].row = 6
         board[6][i].column = i
-}
+
 
 board = init_board()
 
-def draw_board(DISPLAYSURF) {
+def draw_board(DISPLAYSURF):
     for i in range(8):
         for j in range(8):
-            pygame.draw.rect(DISPLAYSURF, CREAM if (8 * i + j) % 2 == 0 else BROWN, )
-}
+            pygame.draw.rect(DISPLAYSURF, CREAM if (8 * i + j) % 2 == 0 else BROWN, (i * TILESIZE, j * TILESIZE, TILESIZE, TILESIZE))
+    pygame.display.update()
+    FPSClock.tick(FPS)
+    
+def main():
+    while True:
+        DISPLAYSURF = pygame.display.set_mode((WINWIDTH, WINHEIGHT))
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+        draw_board(DISPLAYSURF)
+        pygame.display.update()
+        FPSClock.tick(FPS)
+main()
