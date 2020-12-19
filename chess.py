@@ -12,7 +12,7 @@ HALF_WINHEIGHT = int(WINHEIGHT/2)
 FPSClock = pygame.time.Clock()
 
 
-TILESIZE = 50
+TILESIZE = 60
 
 BRIGHTBLUE =  ( 0, 170, 255)
 WHITE = (255, 255, 255)
@@ -33,7 +33,7 @@ class Piece:
     row = 0
     column = 0
     piece_type = NONE
-    color = BLACK
+    color = NONE
     alive = True
     selected = False
     
@@ -42,7 +42,9 @@ class Piece:
         self.color = color 
     
     def kill(self):
-        alive = False
+        self.alive = False
+        
+    
 
 REPEATEDPIECES = [ROOK, KNIGHT, BISHOP]
 
@@ -80,28 +82,49 @@ def init_board():
         board[1][i].column = i
     
     for i in range(8):
-        board[6][i] = Piece(PAWN, BLACK)
+        board[6][i] = Piece(PAWN, WHITE)
         board[6][i].row = 6
         board[6][i].column = i
+    return board
 
 
 board = init_board()
 
-def draw_board(DISPLAYSURF):
+WHITE_PAWN = pygame.image.load("wp.png")
+WHITE_ROOK = pygame.image.load("wr.png")
+
+BLACK_PAWN = pygame.image.load("bp.png")
+BLACK_ROOK = pygame.image.load("br.png")
+
+def draw_board():
     for i in range(8):
         for j in range(8):
-            pygame.draw.rect(DISPLAYSURF, CREAM if (8 * i + j) % 2 == 0 else BROWN, (i * TILESIZE, j * TILESIZE, TILESIZE, TILESIZE))
+            pygame.draw.rect(DISPLAYSURF, (CREAM if (i + j) % 2 == 0 else BROWN), (j * TILESIZE, i * TILESIZE, TILESIZE, TILESIZE))
+            if(board[i][j].piece_type != NONE):
+                if board[i][j].piece_type == PAWN:
+                    if board[i][j].color == WHITE:
+                        DISPLAYSURF.blit(WHITE_PAWN, (j * TILESIZE, i * TILESIZE))
+                    elif board[i][j].color == BLACK:
+                        DISPLAYSURF.blit(BLACK_PAWN, (j * TILESIZE, i * TILESIZE))
+                elif board[i][j].piece_type == ROOK:
+                    if board[i][j].color == WHITE:
+                        DISPLAYSURF.blit(WHITE_ROOK, (j * TILESIZE, i * TILESIZE))
+                    elif board[i][j].color == BLACK:
+                        DISPLAYSURF.blit(BLACK_ROOK, (j * TILESIZE, i * TILESIZE))
+                
     pygame.display.update()
     FPSClock.tick(FPS)
     
 def main():
+    global DISPLAYSURF
+    DISPLAYSURF = pygame.display.set_mode((WINWIDTH, WINHEIGHT))
     while True:
-        DISPLAYSURF = pygame.display.set_mode((WINWIDTH, WINHEIGHT))
+        
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-        draw_board(DISPLAYSURF)
+        draw_board()
         pygame.display.update()
         FPSClock.tick(FPS)
 main()
