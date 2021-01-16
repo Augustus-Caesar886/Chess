@@ -37,6 +37,7 @@ class Piece:
     color = NONE
     alive = True
     selected = False
+    moves = 0
     
     def __init__(self, piece_type, color):
         self.piece_type = piece_type
@@ -44,7 +45,16 @@ class Piece:
     
     def kill(self):
         self.alive = False
+    
+    def assimilate(self, piece):
+        board[piece.row][piece.column] = Piece(NONE, NONE)
+        board[piece.row][piece.column].row = piece.row
+        board[piece.row][piece.column].column = piece.column
+        piece.row = self.row
+        piece.column = self.column
+        board[self.row][self.column] = piece
         
+        self.alive = False
     
 
 REPEATEDPIECES = [ROOK, KNIGHT, BISHOP]
@@ -57,13 +67,15 @@ def init_board():
             board[i][j].column = j
             
     for i in range(3):
-        board[0][i] = board[0][7-i] = Piece(REPEATEDPIECES[i % 3], BLACK)
+        board[0][i] = Piece(REPEATEDPIECES[i % 3], BLACK)
+        board[0][7-i] = Piece(REPEATEDPIECES[i % 3], BLACK)
         board[0][i].row = board[0][7-i].row = 0
         board[0][i].column = i
         board[0][7-i].column = 7-i
         
     for i in range(3):
-        board[7][i] = board[7][7-i] = Piece(REPEATEDPIECES[i % 3], WHITE)
+        board[7][i] = Piece(REPEATEDPIECES[i % 3], WHITE)
+        board[7][7-i] = Piece(REPEATEDPIECES[i % 3], WHITE)
         board[7][i].row = board[7][7-i].row = 7
         board[7][i].column = i
         board[7][7-i].column = 7-i
@@ -162,6 +174,47 @@ def get_selected(mousex, mousey):
             if checkTile.collidepoint(mousex, mousey):
                 return board[i][j]
 
+def get_vertical_dist(piece, tile):
+    return abs(piece.row - tile[0])
+
+def get_horizontal_dist(piece, tile):
+    return abs(piece.column - tile[1])
+
+def check_valid_move(piece, tile):
+    if piece.color == board[tile[0]][tile[1]].color:
+        return False
+    
+    if piece.piece_type == PAWN:
+        if((get_vertical_dist(piece, tile) == 1 or (get_vertical_dist(piece, tile) == 2 and piece.moves == 0)) and get_horizontal_dist(piece, tile)==0 ):
+            return True
+        else:
+            return False
+    elif piece.piece_type == ROOK:
+        if((get_vertical_dist(piece, tile) != 0 and get_horizontal_dist()==0) or (get_vertical_dist(piece, tile) == 0 and get_horizontal_dist(piece, tile)!=0)):
+            return True
+        else:
+            return False
+    elif piece.piece_type == BISHOP:
+        if( get_vertical_dist(piece, tile) == get_horizontal_dist(piece, tile) and get_vertical_dist(piece, tile) != 0 ):
+            return True
+        else:
+            return False 
+    elif piece.piece_type == KNIGHT:
+        if( (get_vertical_dist(piece, tile) == 2 and get_horizontal_dist(piece, tile) == 1) or (get_vertical_dist(piece, tile) == 1 and get_horizontal_dist(piece, tile) == 2) ):
+            return True
+        else:
+            return False
+    elif piece.piece_type == QUEEN:
+        if( (get_vertical_dist(piece, tile) == get_horizontal_dist(piece, tile)) or  ((get_vertical_dist(piece, tile) != 0 and get_horizontal_dist(piece, tile)==0) or (get_vertical_dist(piece, tile) == 0 and get_horizontal_dist(piece, tile)!=0))):
+            return True
+        else:
+            return False
+    elif piece.piece_type == KING:
+        if( (get_vertical_dist(piece, tile) + get_horizontal_dist(piece, tile) == 1) or (get_vertical_dist(piece, tile) == get_horizontal_dist(piece, tile) and get_vertical_dist(piece, tile) == 1)):
+            return True
+    
+    return False
+    
 def main():
     global DISPLAYSURF
     DISPLAYSURF = pygame.display.set_mode((WINWIDTH, WINHEIGHT))
@@ -170,20 +223,33 @@ def main():
     selectedPiece = Piece(NONE, NONE)
     selectedPiece.row = -1
     selectedPiece.column = -1
+    global turn
+    turn = WHITE
     while True:
-        
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONUP:
                 tile = get_selected(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
-                if tile.piece_type != NONE:
+                if tile.piece_type != NONE and turn == tile.color and tile.alive:
                     selectedPiece = tile
+                    selectedPiece.selected = True
                 else: 
                     selectedTile = (tile.row, tile.column)
-                
-                
+                    board[selectedTile[0]][selectedTile[1]].selected = True
+        
+        if selectedPiece.row != -1 and selectedPiece.column != -1 and selectedTile != (-1, -1):
+            if check_valid_move(selectedPiece, selectedTile):
+                if(board[selectedTile[0]][selectedTile[1]].piece_type != NONE):
+                    board[selectedTile[0]][selectedTile[1]].kill()
+                board[selectedTile[0]][selectedTile[1]].assimilate(selectedPiece)
+                board[selectedTile[0]][selectedTile[1]].moves += 1
+            else:
+                selectedPiece = Piece(NONE, NONE)
+                selectedPiece.row = -1
+                selectedPiece.column = -1
+                selectedTile = (-1, -1)
                 
         draw_board()
         pygame.display.update()
