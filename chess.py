@@ -175,45 +175,105 @@ def get_selected(mousex, mousey):
                 return board[i][j]
 
 def get_vertical_dist(piece, tile):
-    return abs(piece.row - tile[0])
+    return -(tile[0] - piece.row )
 
 def get_horizontal_dist(piece, tile):
-    return abs(piece.column - tile[1])
+    return (tile[1] - piece.column)
 
 def check_valid_move(piece, tile):
     if piece.color == board[tile[0]][tile[1]].color:
         return False
     
     if piece.piece_type == PAWN:
-        if((get_vertical_dist(piece, tile) == 1 or (get_vertical_dist(piece, tile) == 2 and piece.moves == 0)) and get_horizontal_dist(piece, tile)==0 ):
+        
+        if (((get_vertical_dist(piece, tile) == ( 1 if piece.color == WHITE else -1 ) or (get_vertical_dist(piece, tile) == (2 if piece.color == WHITE else -2) and piece.moves == 0)) and get_horizontal_dist(piece, tile)==0)) and board[tile[0]][tile[1]].color == NONE:
             return True
         else:
+            if(board[tile[0]][tile[1]].color != turn and board[tile[0]][tile[1]].color != NONE ):
+                if(int(get_vertical_dist(piece, tile) == 1) and abs(get_horizontal_dist(piece, tile)) == 1): #TODO: implement for black pawn
+                    return True
             return False
     elif piece.piece_type == ROOK:
-        if((get_vertical_dist(piece, tile) != 0 and get_horizontal_dist()==0) or (get_vertical_dist(piece, tile) == 0 and get_horizontal_dist(piece, tile)!=0)):
-            return True
+        if((get_vertical_dist(piece, tile) != 0 and get_horizontal_dist(piece, tile)==0) or (get_vertical_dist(piece, tile) == 0 and get_horizontal_dist(piece, tile)!=0)):
+            xdir = 0
+            ydir = 0
+            length = 0
+            length = max(abs(get_horizontal_dist(piece, tile)), abs(get_vertical_dist(piece, tile)))
+            if(get_horizontal_dist(piece, tile) > 0):
+                xdir = 1
+            elif get_horizontal_dist(piece, tile) < 0:
+                xdir = -1
+            if get_vertical_dist(piece, tile) > 0:
+                ydir = -1
+            elif get_vertical_dist(piece, tile) < 0:
+                ydir = 1
+            if check_line_validity(piece.row, piece.column, xdir, ydir, length):
+                return True
+            else:
+                return False
         else:
             return False
     elif piece.piece_type == BISHOP:
-        if( get_vertical_dist(piece, tile) == get_horizontal_dist(piece, tile) and get_vertical_dist(piece, tile) != 0 ):
-            return True
+        if( abs(get_vertical_dist(piece, tile)) == abs(get_horizontal_dist(piece, tile)) and (get_vertical_dist(piece, tile) != 0 )):
+            xdir = 0
+            ydir = 0
+            length = max(abs(get_horizontal_dist(piece, tile)), abs(get_vertical_dist(piece, tile)))
+            if(get_horizontal_dist(piece, tile) > 0):
+                xdir = 1
+            elif get_horizontal_dist(piece, tile) < 0:
+                xdir = -1
+            if get_vertical_dist(piece, tile) > 0:
+                ydir = -1
+            elif get_vertical_dist(piece, tile) < 0:
+                ydir = 1
+            if check_line_validity(piece.row, piece.column, xdir, ydir, length):
+                return True
+            else:
+                return False
         else:
             return False 
     elif piece.piece_type == KNIGHT:
-        if( (get_vertical_dist(piece, tile) == 2 and get_horizontal_dist(piece, tile) == 1) or (get_vertical_dist(piece, tile) == 1 and get_horizontal_dist(piece, tile) == 2) ):
+        if( (abs(get_vertical_dist(piece, tile)) == 2 and abs(get_horizontal_dist(piece, tile)) == 1) or (abs(get_vertical_dist(piece, tile)) == 1 and abs(get_horizontal_dist(piece, tile)) == 2) ):
             return True
         else:
             return False
     elif piece.piece_type == QUEEN:
         if( (get_vertical_dist(piece, tile) == get_horizontal_dist(piece, tile)) or  ((get_vertical_dist(piece, tile) != 0 and get_horizontal_dist(piece, tile)==0) or (get_vertical_dist(piece, tile) == 0 and get_horizontal_dist(piece, tile)!=0))):
-            return True
+            xdir = 0
+            ydir = 0
+            length = 0
+            length = max(abs(get_horizontal_dist(piece, tile)), abs(get_vertical_dist(piece, tile)))
+            if(get_horizontal_dist(piece, tile) > 0):
+                xdir = 1
+            elif get_horizontal_dist(piece, tile) < 0:
+                xdir = -1
+            if get_vertical_dist(piece, tile) > 0:
+                ydir = -1
+            elif get_vertical_dist(piece, tile) < 0:
+                ydir = 1
+            if check_line_validity(piece.row, piece.column, xdir, ydir, length):
+                return True
+            else:
+                return False
         else:
             return False
     elif piece.piece_type == KING:
-        if( (get_vertical_dist(piece, tile) + get_horizontal_dist(piece, tile) == 1) or (get_vertical_dist(piece, tile) == get_horizontal_dist(piece, tile) and get_vertical_dist(piece, tile) == 1)):
+        if( (abs(get_vertical_dist(piece, tile)) + abs(get_horizontal_dist(piece, tile)) == 1) or (abs(get_vertical_dist(piece, tile)) == abs(get_horizontal_dist(piece, tile)) and abs(get_vertical_dist(piece, tile)) == 1)):
             return True
     
     return False
+
+def check_line_validity(piecerow, piececol, xdir, ydir, length):
+    for i in range(length):
+        if (board[piecerow + (i+1) * ydir][piececol + (i+1) * xdir].piece_type != NONE):
+            
+            if(i == length-1 and (board[piecerow + (i+1) * ydir][piececol + (i+1) * xdir].color != turn)):
+                return True
+            else:
+                return False    
+    return True
+
+    
     
 def main():
     global DISPLAYSURF
@@ -245,6 +305,10 @@ def main():
                     board[selectedTile[0]][selectedTile[1]].kill()
                 board[selectedTile[0]][selectedTile[1]].assimilate(selectedPiece)
                 board[selectedTile[0]][selectedTile[1]].moves += 1
+                if turn == WHITE:
+                    turn = BLACK
+                else:
+                    turn = WHITE
             else:
                 selectedPiece = Piece(NONE, NONE)
                 selectedPiece.row = -1
